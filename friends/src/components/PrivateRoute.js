@@ -1,31 +1,43 @@
+// 3 requirements for a <PrivateRoute />
+// 1. Has to have the same API as <Route />
+// 2. Has to render a <Route />, pass in all the props from <PrivateRoute />
+// 3. Redirect to "/login" if the user is not authed, otherwise, display the component
+
 import React from 'react';
 import { Route, Redirect, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-// Requirements:
-// 1. It has the same API as <Route />.
-// 2. It renders a <Route /> and passes all the props through to it.
-// 3. It checks if the user is authenticated, if they are, it renders
-// the “component” prop. If not, it redirects the user to /login.
-const PrivateRoute = ({ component: Component, errorStatusCode, ...rest }) => {
+
+const PrivateRoute = ({
+  component: Component,
+  token,
+  errorStatusCode,
+  ...rest
+}) => {
   return (
     <Route
       {...rest}
-      render={() => {
-        if (localStorage.getItem('token') && errorStatusCode !== 403) {
-          return <Component />;
-        } else {
-          // redirect
-          console.log('redirecting!!!');
-          return <Redirect to="/login" />;
-        }
-      }}
+      render={props =>
+        token && errorStatusCode !== 403 ? (
+          <Component {...props} />
+        ) : (
+          <Redirect to="/login" />
+        )
+      }
     />
   );
 };
 
-const mapStateToProps = state => ({
-  errorStatusCode: state.errorStatusCode
+const mapStateToProps = ({ token, errorStatusCode }) => ({
+  errorStatusCode,
+  token
 });
+
+// const mapStateToProps = state => {
+//   return {
+//     errorStatusCode: state.errorStatusCode
+//     token: state.token
+//   };
+// };
 
 export default withRouter(
   connect(

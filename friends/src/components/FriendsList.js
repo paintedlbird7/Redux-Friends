@@ -1,110 +1,95 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import moment from 'moment';
-import Loader from 'react-loader-spinner';
 import { withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+import Loader from 'react-loader-spinner';
 
-import { getData } from '../actions';
+import { getData, deleteFriends, editFriend } from '../actions';
+
+import EditForm from './EditForm';
 
 class FriendsList extends React.Component {
+  state = {
+    deletingFriend: null,
+    editingFriendId: null
+  };
+
   componentDidMount() {
     this.props.getData();
   }
 
-  formatData = () => {
-    const formattedData = [];
-    this.props.friendsList.forEach((price, index, arr) => {
-      if (price.location === 'US') {
-        formattedData.push({
-          date: moment(price.date).format('MMM'),
-          USPrice: price.price,
-          HawaiiPrice: arr[index + 1].price
-        });
-      }
+  deleteFriend = id => {
+    this.setState({ deletingFriendId: id });
+    this.props.deleteFriends(id);
+  };
+
+  editFriend = (e, friend) => {
+    e.preventDefault();
+    this.props.editFriend(friend).then(() => {
+      this.setState({ editingFriendId: null });
     });
-    return formattedData;
   };
 
   render() {
-    const friendsList = this.formatData();
+    if (this.props.fetchingFriends)
+      return (
+        <div className="friends" style={{ paddingTop: '36px' }}>
+          <Loader type="Puff" color="#ffffff" height="100" width="100" />
+        </div>
+      );
     return (
-      <div className="gas-prices">
-        <div className="title-wrapper">
-          <div className="title">
-            <div className="inner-wrapper">
-              <div className="top-title">Gas Comparison</div>
-              <div className="bottom-title">Continental US vs Hawaii</div>
-            </div>
-          </div>
-        </div>
-        <div className="key">
-          <div className="US-key" />
-          <p className="US-key-text">Continental US Prices</p>
-          <div className="Hawaii-key" />
-          <p className="Hawaii-key-text">Hawaii Prices</p>
-        </div>
-        {this.props.fetchingData && (
-          <div className="key spinner">
-            <Loader type="Puff" color="#204963" height="60" width="60" />
-            <p>Loading Data</p>
-          </div>
-        )}
-        {!this.fetchingData && friendsList.length > 0 && (
-          <div className="gas-wrapper">
-            <div className="columns">
-              <div className="months">
-                <div className="year">2006</div>
-                <div className="year">2007</div>
-                <div className="year">2008</div>
-                <div className="year">2009</div>
-                <div className="year">2010</div>
-                <div className="year">2011</div>
-                <div className="year">2012</div>
+      <div className="friends">
+        <h2>Friends 🦸‍♀️🦸‍♂️</h2>
+        {this.props.friends.map(friend => {
+          if (this.state.editingFriendId === friend.id) {
+            return (
+              <div className="friend-card">
+                <EditForm
+                  friend={friend}
+                  editFriend={this.editFriend}
+                  editingFriend={this.props.editingFriend}
+                />
               </div>
-              <div>
-                {friendsList.map(price => (
-                  <div className="price-graph">
-                    <div className="date">
-                      <p>{price.date}</p>
-                    </div>
-                    <div className="hawaii-graph">
-                      <div
-                        className="hawaii-line"
-                        style={{
-                          width: `${(Number(price.HawaiiPrice) / 5) * 100}%`
-                        }}
-                      />
-                      <p>${price.HawaiiPrice}</p>
-                    </div>
-                    <div className="us-graph">
-                      <div
-                        className="us-line"
-                        style={{
-                          width: `${(Number(price.USPrice) / 5) * 100}%`
-                        }}
-                      >
-                        <p>${price.USPrice}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            );
+          }
+          return (
+            <div className="friend-card">
+              <i
+                class="fas fa-pencil-alt"
+                onClick={() => this.setState({ editingFriendId: friend.id })}
+              />
+              <i
+                class="fas fa-times"
+                onClick={() => this.deleteFriend(friend.id)}
+              />
+              <h4>{friend.name}</h4>
+              <p>{friend.email}</p>
+              {this.props.deletingFriend &&
+                this.state.deletingFriendId === friend.id && (
+                  <p>Deleting Friend 👋</p>
+                )}
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
     );
   }
 }
 
-const mapStateToProps = ({ friendsList, fetchingData }) => ({
-  friendsList,
-  fetchingData
+const mapStateToProps = ({
+  deletingFriend,
+  friends,
+  fetchingFriends,
+  editingFriend
+}) => ({
+  deletingFriend,
+  editingFriend,
+  friends,
+  fetchingFriends
 });
 
 export default withRouter(
   connect(
     mapStateToProps,
-    { getData }
+    { getData, deleteFriends, editFriend }
   )(FriendsList)
 );
